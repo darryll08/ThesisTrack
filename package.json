@@ -11,6 +11,7 @@
     "test:phase5": "node --experimental-strip-types src/lib/phase5.test.ts",
     "db:seed": "prisma db seed",
     "demo:reset": "node --experimental-strip-types prisma/demo.ts reset",
+    "demo:reset:remote": "node --env-file=.env.demo.development.local --experimental-strip-types prisma/demo-remote.ts",
     "demo:status": "node --experimental-strip-types prisma/demo.ts status"
   },
   "prisma": {
