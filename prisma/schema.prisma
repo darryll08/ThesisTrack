@@ -1,0 +1,325 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum StatusAktif {
+  ACTIVE
+  INACTIVE
+
+  @@map("status_aktif")
+}
+
+enum PenggunaRole {
+  MAHASISWA
+  DOSEN
+  KOORDINATOR
+  ADMIN
+
+  @@map("pengguna_role")
+}
+
+enum TugasAkhirStatus {
+  DRAFT
+  ACTIVE
+  COMPLETED
+  CANCELLED
+
+  @@map("tugas_akhir_status")
+}
+
+enum PengajuanTopikStatus {
+  MENUNGGU
+  DISETUJUI
+  PERLU_REVISI
+
+  @@map("pengajuan_topik_status")
+}
+
+enum TaMilestoneStatus {
+  BELUM
+  SELESAI
+
+  @@map("ta_milestone_status")
+}
+
+enum BimbinganStatus {
+  MENUNGGU
+  TERVALIDASI
+  PERLU_REVISI
+
+  @@map("bimbingan_status")
+}
+
+enum DokumenStatus {
+  MENUNGGU_REVIEW
+  TERVERIFIKASI
+  PERLU_REVISI
+
+  @@map("dokumen_status")
+}
+
+enum PersonalTaskTipe {
+  THESIS
+  STUDY
+  PERSONAL
+
+  @@map("personal_task_tipe")
+}
+
+enum PersonalTaskStatus {
+  TODO
+  IN_PROGRESS
+  SELESAI
+
+  @@map("personal_task_status")
+}
+
+enum UjianTaJenis {
+  SEMINAR_PROPOSAL
+  SEMINAR_HASIL
+  SIDANG
+
+  @@map("ujian_ta_jenis")
+}
+
+enum UjianTaStatus {
+  DRAFT
+  TERJADWAL
+  SELESAI
+  DIBATALKAN
+
+  @@map("ujian_ta_status")
+}
+
+model Prodi {
+  id        String      @id @default(uuid()) @db.Uuid
+  kode      String      @unique @db.VarChar(20)
+  nama      String      @db.VarChar(255)
+  status    StatusAktif @default(ACTIVE)
+  createdAt DateTime    @default(now()) @map("created_at")
+  updatedAt DateTime    @updatedAt @map("updated_at")
+  pengguna  Pengguna[]
+
+  @@map("prodi")
+}
+
+model Pengguna {
+  id                 String           @id @default(uuid()) @db.Uuid
+  prodiId            String?          @map("prodi_id") @db.Uuid
+  nama               String           @db.VarChar(255)
+  email              String           @unique @db.VarChar(255)
+  passwordHash       String           @map("password_hash") @db.VarChar(255)
+  role               PenggunaRole
+  nimNip             String?          @unique @map("nim_nip") @db.VarChar(50)
+  status             StatusAktif      @default(ACTIVE)
+  mustChangePassword Boolean          @default(true) @map("must_change_password")
+  createdAt          DateTime         @default(now()) @map("created_at")
+  updatedAt          DateTime         @updatedAt @map("updated_at")
+  prodi              Prodi?           @relation(fields: [prodiId], references: [id], onDelete: SetNull)
+  personalTasks      PersonalTask[]
+  tugasAkhir         TugasAkhir[]     @relation("MahasiswaTugasAkhir")
+  pengajuanValidasi  PengajuanTopik[] @relation("ValidatorPengajuanTopik")
+  pembimbing         Pembimbing[]     @relation("DosenPembimbing")
+  tindakLanjut       TindakLanjut[]   @relation("AuthorTindakLanjut")
+
+  @@index([prodiId, role, status])
+  @@map("pengguna")
+}
+
+model TugasAkhir {
+  id             String           @id @default(uuid()) @db.Uuid
+  mahasiswaId    String           @map("mahasiswa_id") @db.Uuid
+  judulFinal     String?          @map("judul_final") @db.Text
+  status         TugasAkhirStatus @default(DRAFT)
+  tanggalMulai   DateTime?        @map("tanggal_mulai") @db.Date
+  tanggalSelesai DateTime?        @map("tanggal_selesai") @db.Date
+  createdAt      DateTime         @default(now()) @map("created_at")
+  updatedAt      DateTime         @updatedAt @map("updated_at")
+  mahasiswa      Pengguna         @relation("MahasiswaTugasAkhir", fields: [mahasiswaId], references: [id], onDelete: Restrict)
+  pengajuanTopik PengajuanTopik[]
+  pembimbing     Pembimbing[]
+  milestones     TaMilestone[]
+  dokumen        Dokumen[]
+  tindakLanjut   TindakLanjut[]
+  ujian          UjianTa[]
+
+  @@index([mahasiswaId, status])
+  @@map("tugas_akhir")
+}
+
+model PengajuanTopik {
+  id           String               @id @default(uuid()) @db.Uuid
+  tugasAkhirId String               @map("tugas_akhir_id") @db.Uuid
+  validatorId  String?              @map("validator_id") @db.Uuid
+  judul        String               @db.Text
+  bidang       String?              @db.VarChar(255)
+  status       PengajuanTopikStatus @default(MENUNGGU)
+  catatan      String?              @db.Text
+  submittedAt  DateTime             @default(now()) @map("submitted_at")
+  decidedAt    DateTime?            @map("decided_at")
+  updatedAt    DateTime             @updatedAt @map("updated_at")
+  tugasAkhir   TugasAkhir           @relation(fields: [tugasAkhirId], references: [id], onDelete: Restrict)
+  validator    Pengguna?            @relation("ValidatorPengajuanTopik", fields: [validatorId], references: [id], onDelete: SetNull)
+
+  @@index([tugasAkhirId, status])
+  @@index([validatorId])
+  @@map("pengajuan_topik")
+}
+
+model Pembimbing {
+  id           String      @id @default(uuid()) @db.Uuid
+  tugasAkhirId String      @map("tugas_akhir_id") @db.Uuid
+  dosenId      String      @map("dosen_id") @db.Uuid
+  urutan       Int         @db.SmallInt
+  status       StatusAktif @default(ACTIVE)
+  assignedAt   DateTime    @default(now()) @map("assigned_at")
+  endedAt      DateTime?   @map("ended_at")
+  tugasAkhir   TugasAkhir  @relation(fields: [tugasAkhirId], references: [id], onDelete: Restrict)
+  dosen        Pengguna    @relation("DosenPembimbing", fields: [dosenId], references: [id], onDelete: Restrict)
+  bimbingan    Bimbingan[]
+
+  @@unique([tugasAkhirId, dosenId, assignedAt])
+  @@index([tugasAkhirId, status])
+  @@index([dosenId, status])
+  @@map("pembimbing")
+}
+
+model MasterMilestone {
+  id         String        @id @default(uuid()) @db.Uuid
+  kode       String        @unique @db.VarChar(30)
+  nama       String        @db.VarChar(255)
+  urutan     Int           @unique @db.SmallInt
+  status     StatusAktif   @default(ACTIVE)
+  createdAt  DateTime      @default(now()) @map("created_at")
+  updatedAt  DateTime      @updatedAt @map("updated_at")
+  milestones TaMilestone[]
+
+  @@map("master_milestone")
+}
+
+model TaMilestone {
+  id                String            @id @default(uuid()) @db.Uuid
+  tugasAkhirId      String            @map("tugas_akhir_id") @db.Uuid
+  masterMilestoneId String?           @map("master_milestone_id") @db.Uuid
+  nama              String            @db.VarChar(255)
+  urutan            Int               @db.SmallInt
+  status            TaMilestoneStatus @default(BELUM)
+  completedAt       DateTime?         @map("completed_at")
+  createdAt         DateTime          @default(now()) @map("created_at")
+  updatedAt         DateTime          @updatedAt @map("updated_at")
+  tugasAkhir        TugasAkhir        @relation(fields: [tugasAkhirId], references: [id], onDelete: Restrict)
+  masterMilestone   MasterMilestone?  @relation(fields: [masterMilestoneId], references: [id], onDelete: SetNull)
+  bimbingan         Bimbingan[]
+
+  @@unique([tugasAkhirId, urutan])
+  @@index([masterMilestoneId])
+  @@map("ta_milestone")
+}
+
+model Bimbingan {
+  id            String          @id @default(uuid()) @db.Uuid
+  pembimbingId  String          @map("pembimbing_id") @db.Uuid
+  taMilestoneId String?         @map("ta_milestone_id") @db.Uuid
+  dokumenId     String?         @map("dokumen_id") @db.Uuid
+  tanggal       DateTime        @db.Date
+  topik         String          @db.Text
+  status        BimbinganStatus @default(MENUNGGU)
+  feedback      String?         @db.Text
+  revisionItem  String?         @map("revision_item") @db.Text
+  submittedAt   DateTime        @default(now()) @map("submitted_at")
+  reviewedAt    DateTime?       @map("reviewed_at")
+  updatedAt     DateTime        @updatedAt @map("updated_at")
+  pembimbing    Pembimbing      @relation(fields: [pembimbingId], references: [id], onDelete: Restrict)
+  taMilestone   TaMilestone?    @relation(fields: [taMilestoneId], references: [id], onDelete: SetNull)
+  dokumen       Dokumen?        @relation(fields: [dokumenId], references: [id], onDelete: Restrict)
+
+  @@index([pembimbingId, status])
+  @@index([taMilestoneId, status])
+  @@index([dokumenId])
+  @@map("bimbingan")
+}
+
+model Dokumen {
+  id           String        @id @default(uuid()) @db.Uuid
+  tugasAkhirId String        @map("tugas_akhir_id") @db.Uuid
+  namaFile     String        @map("nama_file") @db.VarChar(255)
+  jenis        String        @db.VarChar(255)
+  versi        Int           @default(1)
+  status       DokumenStatus @default(MENUNGGU_REVIEW)
+  storagePath  String?       @map("storage_path") @db.Text
+  uploadedAt   DateTime      @default(now()) @map("uploaded_at")
+  updatedAt    DateTime      @updatedAt @map("updated_at")
+  tugasAkhir   TugasAkhir    @relation(fields: [tugasAkhirId], references: [id], onDelete: Restrict)
+  bimbingan    Bimbingan[]
+
+  @@index([tugasAkhirId, status])
+  @@map("dokumen")
+}
+
+model PersonalTask {
+  id        String             @id @default(uuid()) @db.Uuid
+  pemilikId String             @map("pemilik_id") @db.Uuid
+  nama      String             @db.VarChar(255)
+  tipe      PersonalTaskTipe
+  dueDate   DateTime?          @map("due_date") @db.Date
+  status    PersonalTaskStatus @default(TODO)
+  createdAt DateTime           @default(now()) @map("created_at")
+  updatedAt DateTime           @updatedAt @map("updated_at")
+  pemilik   Pengguna           @relation(fields: [pemilikId], references: [id], onDelete: Restrict)
+
+  @@index([pemilikId, status])
+  @@map("personal_task")
+}
+
+model TindakLanjut {
+  id           String     @id @default(uuid()) @db.Uuid
+  tugasAkhirId String     @map("tugas_akhir_id") @db.Uuid
+  authorId     String     @map("author_id") @db.Uuid
+  catatan      String     @db.Text
+  createdAt    DateTime   @default(now()) @map("created_at")
+  updatedAt    DateTime   @updatedAt @map("updated_at")
+  tugasAkhir   TugasAkhir @relation(fields: [tugasAkhirId], references: [id], onDelete: Restrict)
+  author       Pengguna   @relation("AuthorTindakLanjut", fields: [authorId], references: [id], onDelete: Restrict)
+
+  @@index([tugasAkhirId, createdAt])
+  @@index([authorId])
+  @@map("tindak_lanjut")
+}
+
+model Ruangan {
+  id        String      @id @default(uuid()) @db.Uuid
+  kode      String      @unique @db.VarChar(30)
+  nama      String      @db.VarChar(255)
+  lokasi    String      @db.VarChar(255)
+  kapasitas Int
+  status    StatusAktif @default(ACTIVE)
+  createdAt DateTime    @default(now()) @map("created_at")
+  updatedAt DateTime    @updatedAt @map("updated_at")
+  ujian     UjianTa[]
+
+  @@map("ruangan")
+}
+
+model UjianTa {
+  id           String        @id @default(uuid()) @db.Uuid
+  tugasAkhirId String        @map("tugas_akhir_id") @db.Uuid
+  ruanganId    String        @map("ruangan_id") @db.Uuid
+  jenis        UjianTaJenis
+  tanggal      DateTime      @db.Date
+  jamMulai     DateTime      @map("jam_mulai") @db.Time(0)
+  jamSelesai   DateTime      @map("jam_selesai") @db.Time(0)
+  status       UjianTaStatus @default(DRAFT)
+  createdAt    DateTime      @default(now()) @map("created_at")
+  updatedAt    DateTime      @updatedAt @map("updated_at")
+  tugasAkhir   TugasAkhir    @relation(fields: [tugasAkhirId], references: [id], onDelete: Restrict)
+  ruangan      Ruangan       @relation(fields: [ruanganId], references: [id], onDelete: Restrict)
+
+  @@index([tugasAkhirId, status])
+  @@index([ruanganId, tanggal, jamMulai, jamSelesai])
+  @@map("ujian_ta")
+}

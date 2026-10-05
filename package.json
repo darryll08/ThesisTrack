@@ -6,12 +6,26 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "test:jakarta-date": "node --experimental-strip-types src/lib/jakarta-date.test.ts",
+    "test:phase5": "node --experimental-strip-types src/lib/phase5.test.ts",
+    "db:seed": "prisma db seed",
+    "demo:reset": "node --experimental-strip-types prisma/demo.ts reset",
+    "demo:status": "node --experimental-strip-types prisma/demo.ts status"
+  },
+  "prisma": {
+    "seed": "node prisma/seed.ts"
   },
   "dependencies": {
+    "@prisma/client": "6.12.0",
+    "@vercel/blob": "^2.8.0",
+    "bcryptjs": "^3.0.3",
+    "lucide-react": "^1.48.0",
     "next": "16.3.6",
+    "next-auth": "^5.0.0-beta.32",
     "react": "19.2.8",
-    "react-dom": "19.2.8"
+    "react-dom": "19.2.8",
+    "zod": "^4.6.5"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
@@ -20,6 +34,7 @@
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.3.6",
+    "prisma": "6.12.0",
     "tailwindcss": "^4",
     "typescript": "^5"
   }
