@@ -47,20 +47,14 @@ Personal Roadmap adalah checklist fleksibel milik mahasiswa. Roadmap boleh koson
 
 ## Database development
 
-Salin `.env.example` menjadi `.env`, lalu isi `DATABASE_URL` dengan koneksi PostgreSQL/Neon development yang valid dan `AUTH_SECRET` yang aman. Private Vercel Blob harus terhubung; untuk local development gunakan `vercel link` lalu `vercel env pull`. `BLOB_READ_WRITE_TOKEN` tetap dapat disediakan oleh environment sebagai opsi token statis, tetapi source tidak mewajibkan metode autentikasi tersebut. Setelah itu jalankan migration dan seed:
+Siapkan environment lokal yang diabaikan Git, lalu isi `DATABASE_URL` dengan koneksi PostgreSQL/Neon development yang valid, `AUTH_SECRET` yang aman, dan `DEMO_SEED_PASSWORD` untuk akun development. Private Vercel Blob harus terhubung; untuk local development gunakan `vercel link` lalu `vercel env pull`. `BLOB_READ_WRITE_TOKEN` tetap dapat disediakan oleh environment sebagai opsi token statis, tetapi source tidak mewajibkan metode autentikasi tersebut. Setelah itu jalankan migration dan seed:
 
 ```bash
 npx prisma migrate dev --name init_database
 npm run db:seed
 ```
 
-Seed menggunakan bcrypt untuk seluruh akun demo dengan password development:
-
-```text
-ThesisTrackDemo123!
-```
-
-Akun demo menggunakan email berakhiran `@thesistrack.local`, misalnya `admin@thesistrack.local`. Password ini hanya untuk development dan tidak boleh digunakan sebagai credential production.
+Seed menggunakan bcrypt untuk seluruh akun demo dengan password dari environment wajib `DEMO_SEED_PASSWORD`. Akun demo menggunakan email berakhiran `@thesistrack.local`, misalnya `admin@thesistrack.local`. Simpan password hanya di environment development lokal dan jangan gunakan sebagai credential production.
 
 Rule lintas-record berikut ditegakkan melalui validasi service dan server transaction karena tidak direpresentasikan secara bersih oleh Prisma schema:
 

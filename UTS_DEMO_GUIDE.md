@@ -1,6 +1,6 @@
 # ThesisTrack UTS Demo Guide
 
-> **LOCAL/DEMO ONLY** — seluruh credential di dokumen ini hanya untuk database demo lokal dan bukan production secret.
+> **LOCAL/DEMO ONLY** — nilai credential tidak disimpan di repository. Dapatkan password dari environment demo lokal yang diabaikan Git; jangan gunakan credential production.
 
 ## Preparation
 
@@ -8,6 +8,7 @@ Run from the project root in PowerShell:
 
 ```powershell
 $env:ALLOW_DEMO_RESET = "true"
+if (-not $env:DEMO_ADMIN_PASSWORD) { throw "DEMO_ADMIN_PASSWORD belum dimuat dari environment demo lokal." }
 npm run demo:reset
 npm run demo:status
 npm run dev
@@ -19,7 +20,7 @@ Expected status is `READY`, with `PENGGUNA = 1` and every other domain table `0`
 
 - URL: `http://localhost:3000/login`
 - Email: `admin@thesistrack.local`
-- Password: `ThesisTrackDemo123!`
+- Password: gunakan nilai `DEMO_ADMIN_PASSWORD` dari environment demo lokal; jangan tulis nilainya di repository atau layar presentasi.
 - The demo Admin does not require a first-login password change.
 
 ## Data to Create Live
@@ -35,7 +36,7 @@ Create these records through the UI; do not seed them.
 | Dosen 2 | `Dr. Dosen Dua` - `dosen.dua@thesistrack.local` - `198602022011121002` |
 | Koordinator | `Koordinator Demo` - `koordinator.demo@thesistrack.local` - `197901012005011001` |
 
-Use temporary password `DemoPass123!` for the four non-Admin accounts. At first login, change accounts used in the demo to `DemoBaru123!`. Do not show passwords on screen longer than necessary.
+Use a temporary password obtained from the local-only demo environment for the four non-Admin accounts. At first login, change accounts used in the demo to another locally stored value. Never commit either value or show it on screen longer than necessary.
 
 ## Rehearsal Order
 
@@ -73,6 +74,7 @@ If presentation time is limited, show: clean `demo:status`; Admin user creation;
 
 ```powershell
 $env:ALLOW_DEMO_RESET = "true"
+if (-not $env:DEMO_ADMIN_PASSWORD) { throw "DEMO_ADMIN_PASSWORD belum dimuat dari environment demo lokal." }
 npm run demo:reset
 npm run demo:status
 ```

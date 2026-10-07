@@ -34,9 +34,12 @@ const ids = {
   roadmapB: "00000000-0000-4000-8000-000000000015",
 };
 
-const demoPassword = "ThesisTrackDemo123!";
-
 async function main() {
+  const demoPassword = process.env.DEMO_SEED_PASSWORD;
+  if (!demoPassword?.trim()) {
+    throw new Error("Development seed memerlukan DEMO_SEED_PASSWORD.");
+  }
+
   const developmentPasswordHash = await hash(demoPassword, 12);
   const prodiTsd = await prisma.prodi.upsert({
     where: { kode: "TSD" },

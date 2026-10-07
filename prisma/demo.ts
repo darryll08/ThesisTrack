@@ -76,7 +76,12 @@ async function reset() {
     throw new Error('Demo reset memerlukan ALLOW_DEMO_RESET="true".');
   }
 
-  const passwordHash = await hash("ThesisTrackDemo123!", 12);
+  const demoAdminPassword = process.env.DEMO_ADMIN_PASSWORD;
+  if (!demoAdminPassword?.trim()) {
+    throw new Error("Demo reset memerlukan DEMO_ADMIN_PASSWORD.");
+  }
+
+  const passwordHash = await hash(demoAdminPassword, 12);
   await prisma.$transaction(async (tx) => {
     await tx.bimbingan.deleteMany();
     await tx.ujianTa.deleteMany();
